@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASCII.ART // IMAGE CONVERTER</title>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #39ff14;
+    --green-dim: #1a7a06;
+    --green-mid: #22cc0a;
+    --bg: #090d09;
+    --surface: #0e140e;
+    --border: #1d3d1d;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--green);
+    font-family: 'VT323', 'Courier New', monospace;
+    min-height: 100vh;
+    padding: 2rem 1.5rem 4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* CRT scanlines */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0, 0, 0, 0.12) 3px,
+      rgba(0, 0, 0, 0.12) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* CRT vignette */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.55) 100%);
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    width: 100%;
+    max-width: 860px;
+  }
+
+  .logo {
+    font-size: clamp(2.2rem, 6vw, 4rem);
+    letter-spacing: 0.6rem;
+    color: var(--green);
+    text-shadow: 0 0 8px var(--green), 0 0 20px rgba(57,255,20,0.3);
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+
+  .tagline {
+    font-size: 1rem;
+    color: var(--green-dim);
+    letter-spacing: 0.25rem;
+  }
+
+  .divider {
+    width: 100%;
+    max-width: 860px;
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0.8rem 0 2rem;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 860px;
+    align-items: start;
+  }
+
+  @media (max-width: 680px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.25rem;
+    position: relative;
+  }
+
+  .panel-label {
+    position: absolute;
+    top: -0.65rem;
+    left: 0.8rem;
+    background: var(--surface);
+    padding: 0 0.4rem;
+    font-size: 0.78rem;
+    color: var(--green-dim);
+    letter-spacing: 0.2rem;
+  }
+
+  /* Upload zone */
+  .drop-zone {
+    border: 1px dashed var(--green-dim);
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.over {
+    border-color: var(--green);
+    background: rgba(57,255,20,0.04);
+  }
+  .drop-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+  .drop-icon { font-size: 2.5rem; line-height: 1; margin-bottom: 0.5rem; }
+  .drop-text { font-size: 1.05rem; color: var(--green-mid); letter-spacing: 0.1rem; }
+  .drop-sub { font-size: 0.82rem; color: var(--green-dim); margin-top: 0.3rem; }
+
+  #preview-wrap {
+    display: none;
+    margin-top: 1rem;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+  #preview-wrap img { max-width: 100%; max-height: 180px; display: block; }
+  #preview-info { font-size: 0.78rem; color: var(--green-dim); padding: 0.3rem; letter-spacing: 0.1rem; }
+
+  /* Controls */
+  .ctrl { margin-top: 1rem; }
+  .ctrl-row { margin-bottom: 0.85rem; }
+  .ctrl-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    color: var(--green-dim);
+    letter-spacing: 0.12rem;
+    margin-bottom: 0.35rem;
+  }
+  .ctrl-val { color: var(--green); }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px; height: 13px;
+    background: var(--green);
+    box-shadow: 0 0 5px var(--green);
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 13px; height: 13px;
+    background: var(--green);
+    border: none;
+    cursor: pointer;
+  }
+
+  input[type="text"], input[type="color"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--green);
+    font-family: 'VT323', monospace;
+    font-size: 1rem;
+    padding: 0.3rem 0.5rem;
+    outline: none;
+    letter-spacing: 0.1rem;
+  }
+  input[type="text"]:focus { border-color: var(--green); box-shadow: 0 0 4px rgba(57,255,20,0.3); }
+  input[type="color"] { height: 32px; cursor: pointer; padding: 1px 3px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+  button {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'VT323', monospace;
+    font-size: 1.25rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    letter-spacing: 0.15rem;
+    transition: all 0.12s;
+    text-transform: uppercase;
+  }
+  button:hover:not(:disabled) {
+    border-color: var(--green);
+    background: rgba(57,255,20,0.07);
+    text-shadow: 0 0 6px var(--green);
+  }
+  button:active:not(:disabled) { transform: scale(0.97); }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+  button.primary { border-color: var(--green); text-shadow: 0 0 4px rgba(57,255,20,0.5); }
+
+  /* Status bar */
+  .status-bar {
+    width: 100%;
+    max-width: 860px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0.5rem 1rem;
+    font-size: 0.88rem;
+    color: var(--green-mid);
+    letter-spacing: 0.12rem;
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .status-prefix { color: var(--green-dim); }
+  #status-msg { flex: 1; }
+  .cursor { display: inline-block; width: 8px; height: 1em; background: var(--green); vertical-align: text-bottom; animation: blink 1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Output */
+  #output-section {
+    width: 100%;
+    max-width: 860px;
+    margin-top: 1.5rem;
+    display: none;
+  }
+  .output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.82rem;
+    color: var(--green-dim);
+    letter-spacing: 0.15rem;
+    margin-bottom: 0.5rem;
+  }
+  #output-dims { color: var(--green-mid); }
+  #canvas-wrap {
+    border: 1px solid var(--border);
+    overflow: auto;
+    background: #000;
+    max-height: 70vh;
+  }
+  canvas { display: block; }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    width: 100%;
+    max-width: 860px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+    display: none;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--green);
+    width: 0%;
+    transition: width 0.1s;
+    box-shadow: 0 0 6px var(--green);
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">[ ASCII.ART ]</div>
+  <div class="tagline">// IMAGE-TO-ASCII CONVERTER // v1.0 //</div>
+</header>
+<hr class="divider">
+
+<div class="layout">
+
+  <!-- Left panel: upload + controls -->
+  <div>
+    <div class="panel">
+      <span class="panel-label">// INPUT //</span>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="img-input" accept="image/*">
+        <div class="drop-icon">▒▓▒</div>
+        <div class="drop-text">DROP IMAGE HERE</div>
+        <div class="drop-sub">or click to browse</div>
+      </div>
+      <div id="preview-wrap">
+        <img id="preview-img" alt="preview">
+        <div id="preview-info"></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:1rem;">
+      <span class="panel-label">// PARAMETERS //</span>
+      <div class="ctrl">
+
+        <div class="ctrl-row">
+          <div class="ctrl-label">COLUMNS <span class="ctrl-val" id="v-cols">150</span></div>
+          <input type="range" id="s-cols" min="50" max="300" value="150" step="10">
+        </div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-label">BRIGHTNESS BOOST <span class="ctrl-val" id="v-bright">1.5×</span></div>
+          <input type="range" id="s-bright" min="0.5" max="3.0" value="1.5" step="0.1">
+        </div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-label">CONTRAST BOOST <span class="ctrl-val" id="v-contrast">1.2×</span></div>
+          <input type="range" id="s-contrast" min="0.5" max="2.5" value="1.2" step="0.1">
+        </div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-label">DARK THRESHOLD <span class="ctrl-val" id="v-dark">5</span></div>
+          <input type="range" id="s-dark" min="0" max="60" value="5" step="1">
+        </div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-label">FADE THRESHOLD <span class="ctrl-val" id="v-fade">50</span></div>
+          <input type="range" id="s-fade" min="5" max="120" value="50" step="5">
+        </div>
+
+        <div class="two-col" style="margin-top:0.75rem;">
+          <div class="ctrl-row" style="margin:0;">
+            <div class="ctrl-label">CHAR CLUSTER</div>
+            <input type="text" id="t-chars" value="@%#*+os=c~" maxlength="20">
+          </div>
+          <div class="ctrl-row" style="margin:0;">
+            <div class="ctrl-label">BG COLOR</div>
+            <input type="color" id="c-bg" value="#21282f">
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button id="btn-gen" disabled class="primary">▶ GENERATE</button>
+          <button id="btn-dl" disabled>↓ SAVE PNG</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel: output canvas -->
+  <div>
+    <div id="output-section" style="display:block;">
+      <div class="panel" id="output-placeholder" style="min-height:300px; display:flex; align-items:center; justify-content:center; text-align:center;">
+        <div>
+          <div style="font-size:3rem; color:var(--border); line-height:1; margin-bottom:0.75rem;">▒▒▒▒▒<br>▒▒▒▒▒<br>▒▒▒▒▒</div>
+          <div style="font-size:0.9rem; color:var(--green-dim); letter-spacing:0.15rem;">AWAITING INPUT</div>
+        </div>
+      </div>
+      <div id="real-output" style="display:none;">
+        <div class="output-header">
+          <span>// OUTPUT //</span>
+          <span id="output-dims"></span>
+        </div>
+        <div id="canvas-wrap"><canvas id="out-canvas"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="progress-bar" id="prog-bar"><div class="progress-fill" id="prog-fill"></div></div>
+
+<div class="status-bar">
+  <span class="status-prefix">&gt;&gt;</span>
+  <span id="status-msg">SYSTEM READY. LOAD AN IMAGE TO BEGIN.</span>
+  <span class="cursor"></span>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const imgInput   = $('img-input');
+const dropZone   = $('drop-zone');
+const previewWrap= $('preview-wrap');
+const previewImg = $('preview-img');
+const previewInfo= $('preview-info');
+const btnGen     = $('btn-gen');
+const btnDl      = $('btn-dl');
+const outCanvas  = $('out-canvas');
+const statusMsg  = $('status-msg');
+const progBar    = $('prog-bar');
+const progFill   = $('prog-fill');
+const outputPlaceholder = $('output-placeholder');
+const realOutput = $('real-output');
+const outputDims = $('output-dims');
+
+let loadedImage = null;
+
+// Slider sync
+const sliders = [
+  ['s-cols',     'v-cols',     v => v],
+  ['s-bright',   'v-bright',   v => parseFloat(v).toFixed(1) + '×'],
+  ['s-contrast', 'v-contrast', v => parseFloat(v).toFixed(1) + '×'],
+  ['s-dark',     'v-dark',     v => v],
+  ['s-fade',     'v-fade',     v => v],
+];
+sliders.forEach(([sid, vid, fmt]) => {
+  const el = $(sid);
+  el.addEventListener('input', () => { $(vid).textContent = fmt(el.value); });
+});
+
+// Drag + drop
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) loadFile(f);
+});
+imgInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+
+function loadFile(file) {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    loadedImage = img;
+    previewImg.src = url;
+    previewWrap.style.display = 'block';
+    previewInfo.textContent = `${img.width} × ${img.height}px  |  ${(file.size/1024).toFixed(0)} KB`;
+    btnGen.disabled = false;
+    setStatus(`IMAGE LOADED: ${file.name.toUpperCase()}`);
+  };
+  img.src = url;
+}
+
+function setStatus(msg) { statusMsg.textContent = msg; }
+function setProgress(pct) {
+  progBar.style.display = 'block';
+  progFill.style.width = pct + '%';
+  if (pct >= 100) setTimeout(() => { progBar.style.display = 'none'; }, 400);
+}
+
+btnGen.addEventListener('click', () => {
+  if (!loadedImage) return;
+  btnGen.disabled = true;
+  btnDl.disabled = true;
+  setStatus('INITIALIZING...');
+  setProgress(5);
+  // Defer so the UI can repaint
+  requestAnimationFrame(() => setTimeout(doGenerate, 30));
+});
+
+function doGenerate() {
+  try {
+    const cols      = parseInt($('s-cols').value);
+    const bright    = parseFloat($('s-bright').value);
+    const contrast  = parseFloat($('s-contrast').value);
+    const darkT     = parseInt($('s-dark').value);
+    const fadeT     = parseInt($('s-fade').value);
+    const chars     = $('t-chars').value || '@%#*+os=c~';
+    const bgHex     = $('c-bg').value;
+    const bgR = parseInt(bgHex.slice(1,3),16);
+    const bgG = parseInt(bgHex.slice(3,5),16);
+    const bgB = parseInt(bgHex.slice(5,7),16);
+
+    // --- Measure actual char dimensions via a temp canvas ---
+    const probe = document.createElement('canvas');
+    probe.width = 20; probe.height = 20;
+    const pc = probe.getContext('2d');
+    pc.font = '8px "Courier New", "Share Tech Mono", monospace';
+    const cw = Math.ceil(pc.measureText('M').width);
+    const ch = 10;
+
+    // --- Aspect-correct row count ---
+    const fontAspect = cw / ch;
+    const rows = Math.round(cols * (loadedImage.height / loadedImage.width) * fontAspect);
+
+    setStatus('SAMPLING IMAGE...');
+    setProgress(20);
+
+    // --- Resize & sample image ---
+    const tmp = document.createElement('canvas');
+    tmp.width = cols; tmp.height = rows;
+    const tc = tmp.getContext('2d');
+    tc.drawImage(loadedImage, 0, 0, cols, rows);
+    const imgData = tc.getImageData(0, 0, cols, rows);
+    const px = imgData.data;
+
+    // Brightness + contrast per pixel
+    const coff = 128 * (1 - contrast);
+    for (let i = 0; i < px.length; i += 4) {
+      px[i]   = Math.min(255, Math.max(0, px[i]   * bright * contrast + coff));
+      px[i+1] = Math.min(255, Math.max(0, px[i+1] * bright * contrast + coff));
+      px[i+2] = Math.min(255, Math.max(0, px[i+2] * bright * contrast + coff));
+    }
+
+    setStatus('RENDERING ASCII...');
+    setProgress(50);
+
+    // --- Setup output canvas ---
+    const outW = cols * cw;
+    const outH = rows * ch;
+    outCanvas.width  = outW;
+    outCanvas.height = outH;
+    const ctx = outCanvas.getContext('2d');
+    ctx.fillStyle = `rgb(${bgR},${bgG},${bgB})`;
+    ctx.fillRect(0, 0, outW, outH);
+    ctx.font = `8px "Courier New", "Share Tech Mono", monospace`;
+    ctx.textBaseline = 'top';
+
+    // --- Draw each character ---
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const i = (y * cols + x) * 4;
+        let r = px[i], g = px[i+1], b = px[i+2];
+        const lum = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+
+        if (lum <= darkT) {
+          r = bgR; g = bgG; b = bgB;
+        } else if (lum < fadeT) {
+          const ratio = (lum - darkT) / Math.max(1, fadeT - darkT);
+          r = Math.round(bgR + (r - bgR) * ratio);
+          g = Math.round(bgG + (g - bgG) * ratio);
+          b = Math.round(bgB + (b - bgB) * ratio);
+        }
+
+        const ci = Math.round((lum / 255) * (chars.length - 1));
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillText(chars[ci], x * cw, y * ch);
+      }
+    }
+
+    setProgress(100);
+    outputPlaceholder.style.display = 'none';
+    realOutput.style.display = 'block';
+    outputDims.textContent = `${outW} × ${outH}px`;
+    btnGen.disabled = false;
+    btnDl.disabled = false;
+    setStatus(`COMPLETE. ${cols}×${rows} CHARS | OUTPUT ${outW}×${outH}px`);
+
+  } catch(e) {
+    setStatus('ERROR: ' + e.message);
+    btnGen.disabled = false;
+    setProgress(0);
+  }
+}
+
+btnDl.addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.download = 'ascii-art.png';
+  a.href = outCanvas.toDataURL('image/png');
+  a.click();
+});
+</script>
+</body>
+</html>
