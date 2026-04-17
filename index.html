@@ -2,393 +2,334 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>ASCII.ART // IMAGE CONVERTER</title>
-<link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
+  /* =========================================
+     RETRO MINIMALIST RESET & VARIABLES
+     ========================================= */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --green: #39ff14;
-    --green-dim: #1a7a06;
-    --green-mid: #22cc0a;
-    --bg: #090d09;
-    --surface: #0e140e;
-    --border: #1d3d1d;
+    --bg: #050505;          
+    --fg: #e0e0e0;          
+    --fg-dim: #666666;      
+    --border: #444444;      
+    --highlight: #ffffff;   
+    
+    --font-mono: 'Courier New', Courier, monospace;
+  }
+
+  ::selection {
+    background: var(--fg);
+    color: var(--bg);
   }
 
   body {
-    background: var(--bg);
-    color: var(--green);
-    font-family: 'VT323', 'Courier New', monospace;
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.4;
+    text-transform: uppercase;
     min-height: 100vh;
-    padding: 2rem 1.5rem 4rem;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    padding: 2rem;
+    overflow-x: hidden;
   }
 
-  /* CRT scanlines */
   body::after {
     content: '';
     position: fixed;
     inset: 0;
     background: repeating-linear-gradient(
       0deg,
-      transparent,
-      transparent 3px,
-      rgba(0, 0, 0, 0.12) 3px,
-      rgba(0, 0, 0, 0.12) 4px
+      rgba(0,0,0,0.15),
+      rgba(0,0,0,0.15) 1px,
+      transparent 1px,
+      transparent 2px
     );
     pointer-events: none;
-    z-index: 9999;
+    z-index: 999;
   }
 
-  /* CRT vignette */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.55) 100%);
-    pointer-events: none;
-    z-index: 9998;
-  }
-
-  .header {
-    text-align: center;
-    margin-bottom: 2.5rem;
+  /* =========================================
+     LAYOUT (RESPONSIVE GRID)
+     ========================================= */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
     width: 100%;
-    max-width: 860px;
-  }
-
-  .logo {
-    font-size: clamp(2.2rem, 6vw, 4rem);
-    letter-spacing: 0.6rem;
-    color: var(--green);
-    text-shadow: 0 0 8px var(--green), 0 0 20px rgba(57,255,20,0.3);
-    line-height: 1;
-    margin-bottom: 0.4rem;
-  }
-
-  .tagline {
-    font-size: 1rem;
-    color: var(--green-dim);
-    letter-spacing: 0.25rem;
-  }
-
-  .divider {
-    width: 100%;
-    max-width: 860px;
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 0.8rem 0 2rem;
-  }
-
-  .layout {
     display: grid;
     grid-template-columns: 320px 1fr;
-    gap: 1.5rem;
+    gap: 2rem;
+    flex: 1;
+    align-items: start; /* Prevents grid items from forcing equal heights */
+  }
+
+  @media (max-width: 900px) {
+    .container { grid-template-columns: 1fr; }
+    body { padding: 1rem; }
+  }
+
+  /* =========================================
+     HEADER & TYPOGRAPHY
+     ========================================= */
+  header {
+    max-width: 1200px;
+    margin: 0 auto 2rem auto;
     width: 100%;
-    max-width: 860px;
-    align-items: start;
+    border-bottom: 2px solid var(--fg);
+    padding-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
   }
 
-  @media (max-width: 680px) {
-    .layout { grid-template-columns: 1fr; }
-  }
+  h1 { font-size: 2rem; font-weight: normal; letter-spacing: -1px; line-height: 1; }
+  .version { color: var(--fg-dim); font-size: 0.85rem; }
 
-  .panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 1.25rem;
-    position: relative;
-  }
+  /* =========================================
+     PANELS & UI ELEMENTS
+     ========================================= */
+  fieldset { border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 2rem; }
+  legend { padding: 0 0.5rem; color: var(--fg-dim); font-size: 0.85rem; }
 
-  .panel-label {
-    position: absolute;
-    top: -0.65rem;
-    left: 0.8rem;
-    background: var(--surface);
-    padding: 0 0.4rem;
-    font-size: 0.78rem;
-    color: var(--green-dim);
-    letter-spacing: 0.2rem;
-  }
-
-  /* Upload zone */
   .drop-zone {
-    border: 1px dashed var(--green-dim);
+    border: 1px dashed var(--border);
     padding: 2rem 1rem;
     text-align: center;
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
     position: relative;
+    transition: all 0.2s;
+    background: #0a0a0a;
   }
-  .drop-zone:hover, .drop-zone.over {
-    border-color: var(--green);
-    background: rgba(57,255,20,0.04);
-  }
-  .drop-zone input[type="file"] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
-  }
-  .drop-icon { font-size: 2.5rem; line-height: 1; margin-bottom: 0.5rem; }
-  .drop-text { font-size: 1.05rem; color: var(--green-mid); letter-spacing: 0.1rem; }
-  .drop-sub { font-size: 0.82rem; color: var(--green-dim); margin-top: 0.3rem; }
+  .drop-zone:hover, .drop-zone.over { border-color: var(--highlight); background: #111; }
+  .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 
-  #preview-wrap {
-    display: none;
-    margin-top: 1rem;
-    border: 1px solid var(--border);
-    text-align: center;
-  }
-  #preview-wrap img { max-width: 100%; max-height: 180px; display: block; }
-  #preview-info { font-size: 0.78rem; color: var(--green-dim); padding: 0.3rem; letter-spacing: 0.1rem; }
+  #preview-wrap { display: none; margin-top: 1rem; border: 1px solid var(--border); padding: 0.5rem; }
+  #preview-img { max-width: 100%; height: auto; display: block; filter: grayscale(100%); }
+  #preview-info { font-size: 0.75rem; color: var(--fg-dim); margin-top: 0.5rem; text-align: center; }
 
-  /* Controls */
-  .ctrl { margin-top: 1rem; }
-  .ctrl-row { margin-bottom: 0.85rem; }
-  .ctrl-label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.82rem;
-    color: var(--green-dim);
-    letter-spacing: 0.12rem;
-    margin-bottom: 0.35rem;
-  }
-  .ctrl-val { color: var(--green); }
+  .ctrl-row { margin-bottom: 1.2rem; }
+  .ctrl-label { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--fg-dim); }
+  .ctrl-val { color: var(--fg); }
 
-  input[type="range"] {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 3px;
-    background: var(--border);
-    outline: none;
-    cursor: pointer;
-  }
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 13px; height: 13px;
-    background: var(--green);
-    box-shadow: 0 0 5px var(--green);
-    cursor: pointer;
-  }
-  input[type="range"]::-moz-range-thumb {
-    width: 13px; height: 13px;
-    background: var(--green);
-    border: none;
-    cursor: pointer;
-  }
+  /* Cross-Browser Minimalist Sliders */
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; cursor: pointer; }
+  input[type="range"]:focus { outline: none; }
+  input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 1px; background: var(--border); }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; height: 16px; width: 8px; background: var(--fg); margin-top: -8px; border-radius: 0; }
+  input[type="range"]::-moz-range-track { width: 100%; height: 1px; background: var(--border); }
+  input[type="range"]::-moz-range-thumb { height: 16px; width: 8px; background: var(--fg); border: none; border-radius: 0; }
 
+  .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
   input[type="text"], input[type="color"] {
-    width: 100%;
-    background: var(--bg);
+    width: 100%; background: transparent; border: 1px solid var(--border);
+    color: var(--fg); font-family: var(--font-mono); padding: 0.5rem; font-size: 0.9rem; outline: none;
+  }
+  input[type="color"] { padding: 2px 4px; height: 34px; cursor: pointer; }
+  input[type="text"]:focus { border-color: var(--highlight); }
+
+  .btn-row { display: flex; gap: 1rem; margin-top: 2rem; }
+  button.action-btn {
+    flex: 1; background: var(--bg); color: var(--fg); border: 1px solid var(--fg);
+    font-family: var(--font-mono); font-size: 0.9rem; padding: 0.75rem;
+    cursor: pointer; text-transform: uppercase; transition: all 0.1s;
+  }
+  button.action-btn:hover:not(:disabled) { background: var(--fg); color: var(--bg); }
+  button.action-btn:disabled { border-color: var(--border); color: var(--border); cursor: not-allowed; }
+
+  /* =========================================
+     FIXED TERMINAL OUTPUT AREA 
+     ========================================= */
+  .output-panel {
     border: 1px solid var(--border);
-    color: var(--green);
-    font-family: 'VT323', monospace;
-    font-size: 1rem;
-    padding: 0.3rem 0.5rem;
-    outline: none;
-    letter-spacing: 0.1rem;
-  }
-  input[type="text"]:focus { border-color: var(--green); box-shadow: 0 0 4px rgba(57,255,20,0.3); }
-  input[type="color"] { height: 32px; cursor: pointer; padding: 1px 3px; }
-
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-
-  /* Buttons */
-  .btn-row { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
-  button {
-    flex: 1;
-    background: transparent;
-    border: 1px solid var(--green-dim);
-    color: var(--green);
-    font-family: 'VT323', monospace;
-    font-size: 1.25rem;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    letter-spacing: 0.15rem;
-    transition: all 0.12s;
-    text-transform: uppercase;
-  }
-  button:hover:not(:disabled) {
-    border-color: var(--green);
-    background: rgba(57,255,20,0.07);
-    text-shadow: 0 0 6px var(--green);
-  }
-  button:active:not(:disabled) { transform: scale(0.97); }
-  button:disabled { opacity: 0.35; cursor: not-allowed; }
-  button.primary { border-color: var(--green); text-shadow: 0 0 4px rgba(57,255,20,0.5); }
-
-  /* Status bar */
-  .status-bar {
-    width: 100%;
-    max-width: 860px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    padding: 0.5rem 1rem;
-    font-size: 0.88rem;
-    color: var(--green-mid);
-    letter-spacing: 0.12rem;
-    margin-top: 1.5rem;
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    flex-direction: column;
+    background: #020202;
+    /* This makes the terminal a strict, fixed-size window that sticks to the screen */
+    position: sticky;
+    top: 2rem;
+    height: calc(100vh - 10rem); 
+    min-height: 400px;
   }
-  .status-prefix { color: var(--green-dim); }
-  #status-msg { flex: 1; }
-  .cursor { display: inline-block; width: 8px; height: 1em; background: var(--green); vertical-align: text-bottom; animation: blink 1s step-end infinite; }
-  @keyframes blink { 50% { opacity: 0; } }
 
-  /* Output */
-  #output-section {
-    width: 100%;
-    max-width: 860px;
-    margin-top: 1.5rem;
-    display: none;
+  @media (max-width: 900px) {
+    .output-panel { position: relative; top: 0; height: 60vh; }
   }
+
   .output-header {
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.82rem;
-    color: var(--green-dim);
-    letter-spacing: 0.15rem;
-    margin-bottom: 0.5rem;
+    color: var(--fg-dim);
+    font-size: 0.8rem;
+    background: var(--bg);
+    z-index: 10;
   }
-  #output-dims { color: var(--green-mid); }
-  #canvas-wrap {
-    border: 1px solid var(--border);
-    overflow: auto;
-    background: #000;
-    max-height: 70vh;
-  }
-  canvas { display: block; }
 
-  .progress-bar {
-    height: 3px;
-    background: var(--border);
-    width: 100%;
-    max-width: 860px;
-    margin-top: 0.5rem;
-    overflow: hidden;
-    display: none;
+  /* Zoom UI inside Terminal Header */
+  .zoom-controls { display: none; align-items: center; gap: 0.5rem; }
+  .z-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--fg-dim);
+    cursor: pointer; padding: 0 0.5rem; font-family: var(--font-mono); height: 22px; transition: all 0.1s;
   }
-  .progress-fill {
-    height: 100%;
-    background: var(--green);
-    width: 0%;
-    transition: width 0.1s;
-    box-shadow: 0 0 6px var(--green);
+  .z-btn:hover { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  .z-val { cursor: pointer; min-width: 4ch; text-align: center; color: var(--highlight); }
+  .z-val:hover { text-decoration: underline; }
+
+  #output-placeholder {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    color: var(--border); text-align: center; line-height: 2;
   }
+
+  /* Structural lock: #real-output is strictly tied to flex parent bounds */
+  #real-output { 
+    display: none; 
+    flex: 1; 
+    position: relative; /* Essential for containing the absolute canvas-wrap */
+  }
+  
+  #canvas-wrap {
+    position: absolute; /* Isolates internal size from the grid layout */
+    inset: 0;
+    overflow: auto;
+    cursor: grab;
+    
+    /* Firefox custom retro scrollbar */
+    scrollbar-color: var(--border) var(--bg);
+    scrollbar-width: thin;
+  }
+  #canvas-wrap:active { cursor: grabbing; }
+
+  /* WebKit custom retro scrollbar */
+  #canvas-wrap::-webkit-scrollbar { width: 12px; height: 12px; }
+  #canvas-wrap::-webkit-scrollbar-track { background: var(--bg); border-left: 1px solid var(--border); border-top: 1px solid var(--border); }
+  #canvas-wrap::-webkit-scrollbar-thumb { background: var(--border); }
+  #canvas-wrap::-webkit-scrollbar-thumb:hover { background: var(--fg-dim); }
+  #canvas-wrap::-webkit-scrollbar-corner { background: var(--bg); }
+  
+  canvas {
+    display: block;
+    transform-origin: top left;
+    image-rendering: pixelated; 
+  }
+
+  /* =========================================
+     STATUS BAR
+     ========================================= */
+  .status-wrapper { max-width: 1200px; margin: 2rem auto 0 auto; width: 100%; }
+  .progress-bar { height: 1px; background: var(--border); width: 100%; margin-bottom: 0.5rem; display: none; }
+  .progress-fill { height: 100%; background: var(--highlight); width: 0%; transition: width 0.1s; }
+  .status-bar { display: flex; font-size: 0.85rem; color: var(--fg-dim); }
+  .status-prompt { color: var(--fg); margin-right: 0.5rem; }
+  .cursor {
+    display: inline-block; width: 8px; height: 1em; background: var(--fg);
+    vertical-align: text-bottom; animation: blink 1s step-end infinite; margin-left: 4px;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
 </style>
 </head>
 <body>
 
-<header class="header">
-  <div class="logo">[ ASCII.ART ]</div>
-  <div class="tagline">// IMAGE-TO-ASCII CONVERTER // v1.0 //</div>
+<header>
+  <h1>ASCII.ART</h1>
+  <div class="version">SYS_VER 1.0</div>
 </header>
-<hr class="divider">
 
-<div class="layout">
-
-  <!-- Left panel: upload + controls -->
-  <div>
-    <div class="panel">
-      <span class="panel-label">// INPUT //</span>
+<div class="container">
+  
+  <aside>
+    <fieldset>
+      <legend>INPUT_SYS</legend>
       <div class="drop-zone" id="drop-zone">
         <input type="file" id="img-input" accept="image/*">
-        <div class="drop-icon">▒▓▒</div>
-        <div class="drop-text">DROP IMAGE HERE</div>
-        <div class="drop-sub">or click to browse</div>
+        <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">[ + ]</div>
+        <div>UPLOAD_IMAGE</div>
       </div>
       <div id="preview-wrap">
         <img id="preview-img" alt="preview">
         <div id="preview-info"></div>
       </div>
-    </div>
+    </fieldset>
 
-    <div class="panel" style="margin-top:1rem;">
-      <span class="panel-label">// PARAMETERS //</span>
-      <div class="ctrl">
-
-        <div class="ctrl-row">
-          <div class="ctrl-label">COLUMNS <span class="ctrl-val" id="v-cols">150</span></div>
-          <input type="range" id="s-cols" min="50" max="300" value="150" step="10">
-        </div>
-
-        <div class="ctrl-row">
-          <div class="ctrl-label">BRIGHTNESS BOOST <span class="ctrl-val" id="v-bright">1.5×</span></div>
-          <input type="range" id="s-bright" min="0.5" max="3.0" value="1.5" step="0.1">
-        </div>
-
-        <div class="ctrl-row">
-          <div class="ctrl-label">CONTRAST BOOST <span class="ctrl-val" id="v-contrast">1.2×</span></div>
-          <input type="range" id="s-contrast" min="0.5" max="2.5" value="1.2" step="0.1">
-        </div>
-
-        <div class="ctrl-row">
-          <div class="ctrl-label">DARK THRESHOLD <span class="ctrl-val" id="v-dark">5</span></div>
-          <input type="range" id="s-dark" min="0" max="60" value="5" step="1">
-        </div>
-
-        <div class="ctrl-row">
-          <div class="ctrl-label">FADE THRESHOLD <span class="ctrl-val" id="v-fade">50</span></div>
-          <input type="range" id="s-fade" min="5" max="120" value="50" step="5">
-        </div>
-
-        <div class="two-col" style="margin-top:0.75rem;">
-          <div class="ctrl-row" style="margin:0;">
-            <div class="ctrl-label">CHAR CLUSTER</div>
-            <input type="text" id="t-chars" value="@%#*+os=c~" maxlength="20">
-          </div>
-          <div class="ctrl-row" style="margin:0;">
-            <div class="ctrl-label">BG COLOR</div>
-            <input type="color" id="c-bg" value="#21282f">
-          </div>
-        </div>
-
-        <div class="btn-row">
-          <button id="btn-gen" disabled class="primary">▶ GENERATE</button>
-          <button id="btn-dl" disabled>↓ SAVE PNG</button>
-        </div>
-
+    <fieldset>
+      <legend>PARAMETERS</legend>
+      
+      <div class="ctrl-row">
+        <div class="ctrl-label">RESOLUTION <span class="ctrl-val" id="v-cols">150</span></div>
+        <input type="range" id="s-cols" min="50" max="300" value="150" step="10">
       </div>
-    </div>
-  </div>
+      <div class="ctrl-row">
+        <div class="ctrl-label">BRIGHTNESS <span class="ctrl-val" id="v-bright">1.5x</span></div>
+        <input type="range" id="s-bright" min="0.5" max="3.0" value="1.5" step="0.1">
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl-label">CONTRAST <span class="ctrl-val" id="v-contrast">1.2x</span></div>
+        <input type="range" id="s-contrast" min="0.5" max="2.5" value="1.2" step="0.1">
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl-label">BLACK_LVL <span class="ctrl-val" id="v-dark">5</span></div>
+        <input type="range" id="s-dark" min="0" max="60" value="5" step="1">
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl-label">FADE_LVL <span class="ctrl-val" id="v-fade">50</span></div>
+        <input type="range" id="s-fade" min="5" max="120" value="50" step="5">
+      </div>
 
-  <!-- Right panel: output canvas -->
-  <div>
-    <div id="output-section" style="display:block;">
-      <div class="panel" id="output-placeholder" style="min-height:300px; display:flex; align-items:center; justify-content:center; text-align:center;">
+      <div class="input-grid">
         <div>
-          <div style="font-size:3rem; color:var(--border); line-height:1; margin-bottom:0.75rem;">▒▒▒▒▒<br>▒▒▒▒▒<br>▒▒▒▒▒</div>
-          <div style="font-size:0.9rem; color:var(--green-dim); letter-spacing:0.15rem;">AWAITING INPUT</div>
+          <div class="ctrl-label">CHAR_MAP</div>
+          <input type="text" id="t-chars" value="@%#*+os=c~" maxlength="20">
+        </div>
+        <div>
+          <div class="ctrl-label">CANVAS_BG</div>
+          <input type="color" id="c-bg" value="#000000">
         </div>
       </div>
-      <div id="real-output" style="display:none;">
-        <div class="output-header">
-          <span>// OUTPUT //</span>
-          <span id="output-dims"></span>
-        </div>
-        <div id="canvas-wrap"><canvas id="out-canvas"></canvas></div>
+
+      <div class="btn-row">
+        <button id="btn-gen" class="action-btn" disabled>EXECUTE</button>
+        <button id="btn-dl" class="action-btn" disabled>SAVE_PNG</button>
+      </div>
+    </fieldset>
+  </aside>
+
+  <main class="output-panel">
+    <div class="output-header">
+      <span>TERMINAL_OUT</span>
+      <div class="zoom-controls" id="zoom-controls">
+        <button class="z-btn" id="btn-z-out" title="Zoom Out">-</button>
+        <span class="z-val" id="z-val" title="Reset Zoom">100%</span>
+        <button class="z-btn" id="btn-z-in" title="Zoom In">+</button>
+      </div>
+      <span id="output-dims">IDLE</span>
+    </div>
+
+    <div id="output-placeholder">
+      [ AWAITING DATA INPUT ]
+    </div>
+
+    <div id="real-output">
+      <div id="canvas-wrap">
+        <canvas id="out-canvas"></canvas>
       </div>
     </div>
-  </div>
+  </main>
 
 </div>
 
-<div class="progress-bar" id="prog-bar"><div class="progress-fill" id="prog-fill"></div></div>
-
-<div class="status-bar">
-  <span class="status-prefix">&gt;&gt;</span>
-  <span id="status-msg">SYSTEM READY. LOAD AN IMAGE TO BEGIN.</span>
-  <span class="cursor"></span>
+<div class="status-wrapper">
+  <div class="progress-bar" id="prog-bar"><div class="progress-fill" id="prog-fill"></div></div>
+  <div class="status-bar">
+    <span class="status-prompt">C:\></span>
+    <span id="status-msg">READY. LOAD AN IMAGE TO BEGIN.</span>
+    <span class="cursor"></span>
+  </div>
 </div>
 
 <script>
@@ -408,14 +349,17 @@ const progFill   = $('prog-fill');
 const outputPlaceholder = $('output-placeholder');
 const realOutput = $('real-output');
 const outputDims = $('output-dims');
+const canvasWrap = $('canvas-wrap');
+const zoomControls = $('zoom-controls');
 
 let loadedImage = null;
+let currentZoom = 1;
 
-// Slider sync
+// --- Sliders ---
 const sliders = [
   ['s-cols',     'v-cols',     v => v],
-  ['s-bright',   'v-bright',   v => parseFloat(v).toFixed(1) + '×'],
-  ['s-contrast', 'v-contrast', v => parseFloat(v).toFixed(1) + '×'],
+  ['s-bright',   'v-bright',   v => parseFloat(v).toFixed(1) + 'x'],
+  ['s-contrast', 'v-contrast', v => parseFloat(v).toFixed(1) + 'x'],
   ['s-dark',     'v-dark',     v => v],
   ['s-fade',     'v-fade',     v => v],
 ];
@@ -424,12 +368,74 @@ sliders.forEach(([sid, vid, fmt]) => {
   el.addEventListener('input', () => { $(vid).textContent = fmt(el.value); });
 });
 
-// Drag + drop
+// --- Absolute Math Zoom Logic ---
+function setZoom(newZoom, mouseX, mouseY) {
+  if (!outCanvas.width) return;
+  const oldZoom = currentZoom;
+  currentZoom = Math.max(0.1, Math.min(newZoom, 5)); 
+  $('z-val').textContent = Math.round(currentZoom * 100) + '%';
+  
+  // Calculate relative center of viewport if mouseX/Y is undefined
+  const rect = canvasWrap.getBoundingClientRect();
+  const cx = mouseX !== undefined ? mouseX : rect.width / 2;
+  const cy = mouseY !== undefined ? mouseY : rect.height / 2;
+  
+  // Find where the mouse was pointing on the unscaled original canvas
+  const canvasX = (canvasWrap.scrollLeft + cx) / oldZoom;
+  const canvasY = (canvasWrap.scrollTop + cy) / oldZoom;
+  
+  // Scale the canvas up/down
+  outCanvas.style.width = Math.round(outCanvas.width * currentZoom) + 'px';
+  outCanvas.style.height = Math.round(outCanvas.height * currentZoom) + 'px';
+  
+  // Scroll to ensure the mouse stays directly over the same pixel
+  canvasWrap.scrollLeft = (canvasX * currentZoom) - cx;
+  canvasWrap.scrollTop = (canvasY * currentZoom) - cy;
+}
+
+$('btn-z-in').addEventListener('click', () => setZoom(currentZoom + 0.25));
+$('btn-z-out').addEventListener('click', () => setZoom(currentZoom - 0.25));
+$('z-val').addEventListener('click', () => setZoom(1));
+
+// Zoom towards mouse target exactly using mouse wheel + CTRL
+canvasWrap.addEventListener('wheel', (e) => {
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault(); 
+    const rect = canvasWrap.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const zoomStep = 0.1;
+    const newZoom = e.deltaY < 0 ? currentZoom + zoomStep : currentZoom - zoomStep;
+    
+    setZoom(newZoom, mouseX, mouseY);
+  }
+}, { passive: false });
+
+// --- Drag to Pan Canvas Logic ---
+let isDragging = false, startX, startY, scrollLeft, scrollTop;
+canvasWrap.addEventListener('mousedown', e => {
+  isDragging = true;
+  startX = e.pageX - canvasWrap.offsetLeft;
+  startY = e.pageY - canvasWrap.offsetTop;
+  scrollLeft = canvasWrap.scrollLeft;
+  scrollTop = canvasWrap.scrollTop;
+});
+canvasWrap.addEventListener('mouseleave', () => isDragging = false);
+canvasWrap.addEventListener('mouseup', () => isDragging = false);
+canvasWrap.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  e.preventDefault();
+  const x = e.pageX - canvasWrap.offsetLeft;
+  const y = e.pageY - canvasWrap.offsetTop;
+  canvasWrap.scrollLeft = scrollLeft - (x - startX);
+  canvasWrap.scrollTop = scrollTop - (y - startY);
+});
+
+// --- File Handling ---
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
 dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('over');
+  e.preventDefault(); dropZone.classList.remove('over');
   const f = e.dataTransfer.files[0];
   if (f && f.type.startsWith('image/')) loadFile(f);
 });
@@ -442,9 +448,9 @@ function loadFile(file) {
     loadedImage = img;
     previewImg.src = url;
     previewWrap.style.display = 'block';
-    previewInfo.textContent = `${img.width} × ${img.height}px  |  ${(file.size/1024).toFixed(0)} KB`;
+    previewInfo.textContent = `${img.width} x ${img.height}px  /  ${(file.size/1024).toFixed(0)} KB`;
     btnGen.disabled = false;
-    setStatus(`IMAGE LOADED: ${file.name.toUpperCase()}`);
+    setStatus('IMG_LOADED: ' + file.name.toUpperCase());
   };
   img.src = url;
 }
@@ -456,45 +462,41 @@ function setProgress(pct) {
   if (pct >= 100) setTimeout(() => { progBar.style.display = 'none'; }, 400);
 }
 
+// --- Generator ---
 btnGen.addEventListener('click', () => {
   if (!loadedImage) return;
   btnGen.disabled = true;
   btnDl.disabled = true;
-  setStatus('INITIALIZING...');
+  setStatus('PROCESSING_DATA...');
   setProgress(5);
-  // Defer so the UI can repaint
   requestAnimationFrame(() => setTimeout(doGenerate, 30));
 });
 
 function doGenerate() {
   try {
-    const cols      = parseInt($('s-cols').value);
-    const bright    = parseFloat($('s-bright').value);
-    const contrast  = parseFloat($('s-contrast').value);
-    const darkT     = parseInt($('s-dark').value);
-    const fadeT     = parseInt($('s-fade').value);
-    const chars     = $('t-chars').value || '@%#*+os=c~';
-    const bgHex     = $('c-bg').value;
+    const cols     = parseInt($('s-cols').value);
+    const bright   = parseFloat($('s-bright').value);
+    const contrast = parseFloat($('s-contrast').value);
+    const darkT    = parseInt($('s-dark').value);
+    const fadeT    = parseInt($('s-fade').value);
+    const chars    = $('t-chars').value || '@%#*+os=c~';
+    const bgHex    = $('c-bg').value;
     const bgR = parseInt(bgHex.slice(1,3),16);
     const bgG = parseInt(bgHex.slice(3,5),16);
     const bgB = parseInt(bgHex.slice(5,7),16);
 
-    // --- Measure actual char dimensions via a temp canvas ---
     const probe = document.createElement('canvas');
     probe.width = 20; probe.height = 20;
     const pc = probe.getContext('2d');
-    pc.font = '8px "Courier New", "Share Tech Mono", monospace';
+    pc.font = '8px "Courier New", monospace';
     const cw = Math.ceil(pc.measureText('M').width);
     const ch = 10;
 
-    // --- Aspect-correct row count ---
     const fontAspect = cw / ch;
     const rows = Math.round(cols * (loadedImage.height / loadedImage.width) * fontAspect);
 
-    setStatus('SAMPLING IMAGE...');
     setProgress(20);
 
-    // --- Resize & sample image ---
     const tmp = document.createElement('canvas');
     tmp.width = cols; tmp.height = rows;
     const tc = tmp.getContext('2d');
@@ -502,7 +504,6 @@ function doGenerate() {
     const imgData = tc.getImageData(0, 0, cols, rows);
     const px = imgData.data;
 
-    // Brightness + contrast per pixel
     const coff = 128 * (1 - contrast);
     for (let i = 0; i < px.length; i += 4) {
       px[i]   = Math.min(255, Math.max(0, px[i]   * bright * contrast + coff));
@@ -510,10 +511,8 @@ function doGenerate() {
       px[i+2] = Math.min(255, Math.max(0, px[i+2] * bright * contrast + coff));
     }
 
-    setStatus('RENDERING ASCII...');
     setProgress(50);
 
-    // --- Setup output canvas ---
     const outW = cols * cw;
     const outH = rows * ch;
     outCanvas.width  = outW;
@@ -521,10 +520,9 @@ function doGenerate() {
     const ctx = outCanvas.getContext('2d');
     ctx.fillStyle = `rgb(${bgR},${bgG},${bgB})`;
     ctx.fillRect(0, 0, outW, outH);
-    ctx.font = `8px "Courier New", "Share Tech Mono", monospace`;
+    ctx.font = `8px "Courier New", monospace`;
     ctx.textBaseline = 'top';
 
-    // --- Draw each character ---
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
         const i = (y * cols + x) * 4;
@@ -548,14 +546,19 @@ function doGenerate() {
 
     setProgress(100);
     outputPlaceholder.style.display = 'none';
-    realOutput.style.display = 'block';
-    outputDims.textContent = `${outW} × ${outH}px`;
+    realOutput.style.display = 'flex';
+    zoomControls.style.display = 'flex';
+    outputDims.textContent = `${outW}x${outH}px`;
+    
+    // Reset zoom when a new generation happens
+    setZoom(1);
+
     btnGen.disabled = false;
     btnDl.disabled = false;
-    setStatus(`COMPLETE. ${cols}×${rows} CHARS | OUTPUT ${outW}×${outH}px`);
+    setStatus(`OP_COMPLETE. ${cols}x${rows} CHRS`);
 
   } catch(e) {
-    setStatus('ERROR: ' + e.message);
+    setStatus('ERR: ' + e.message);
     btnGen.disabled = false;
     setProgress(0);
   }
